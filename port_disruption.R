@@ -79,14 +79,16 @@ B <- 1000  #Number of simulations
 #mu <- 0.014 #Service rate (72 hour average service time)
 
 #Loosly based on Valencia
-#lambda <- 20.5
-#mu <- 1/3
+lambda <- 30.5
+mu <- 1/3
 #k <- 40
+#k <- 110
+k <- 40
 
 #Alexandria parameters (with climate change mean being 1.67 times present mean and sd 14 times greater)
-lambda <- 5.68
-mu <- 0.18
-k <- 35
+#lambda <- 5.68
+#mu <- 0.18
+#k <- 35
 lambda/(mu*k)
 
 time_at_port_present <-c()
@@ -101,11 +103,11 @@ for(i in 1:B){
   port_capacity_cc[i] <- round(k*(8760-rlnorm(1, mu_cc, s_cc))/8760)
 
   
-  present <- NewInput.MMCK(lambda, mu, port_capacity_present[i],k=100)
+  present <- NewInput.MMCK(lambda, mu, port_capacity_present[i],k=1000)
   Q_present <- QueueingModel(present)
   time_at_port_present[i] <- Q_present$W
   
-  future <- NewInput.MMCK(lambda, mu, port_capacity_cc[i],k=100)
+  future <- NewInput.MMCK(lambda, mu, port_capacity_cc[i],k=1000)
   Q_future <- QueueingModel(future)
   time_at_port_climate_change[i]<- Q_future$W
 }
@@ -114,8 +116,8 @@ a <- mean(time_at_port_present)
 b <- mean(time_at_port_climate_change)
 c <- sd(time_at_port_present)
 d <- sd(time_at_port_climate_change)
-e <- sort(time_at_port_present)[B*0.99]
-f <- sort(time_at_port_climate_change)[B*0.99]
+e <- sort(time_at_port_present)[B*0.95]
+f <- sort(time_at_port_climate_change)[B*0.95]
 
 df <- data.frame(matrix(c(a,b,c,d,e,f),nrow = 2))
 df
