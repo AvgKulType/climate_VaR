@@ -74,16 +74,16 @@ set.seed(69420)
 B <- 1000  #Number of simulations
 
 #"Smaller than Rotterdam" senario
-#k <- 180 #inital_berths
-#lambda <- 2.28 #Average number of arriving vessels
-#mu <- 0.014 #Service rate (72 hour average service time)
+k <- 180 #inital_berths
+lambda <- 2.28 #Average number of arriving vessels
+mu <- 0.014 #Service rate (72 hour average service time)
 
 #Loosly based on Valencia
-lambda <- 30.5
-mu <- 1/3
+#lambda <- 20.5
+#mu <- 1/3
 #k <- 40
 #k <- 110
-k <- 40
+
 
 #Alexandria parameters (with climate change mean being 1.67 times present mean and sd 14 times greater)
 #lambda <- 5.68
@@ -99,15 +99,15 @@ port_capacity_cc<- c()
 
 for(i in 1:B){
   print(B-i)
-  port_capacity_present[i] <- round(k*(8760-rlnorm(1, mu_pres, s_pres))/8760)
+  port_capacity_present[i] <- round(k*(8760-rlnorm(1, mu_pres, s_pres))/8760)  #Is there another function we can use??
   port_capacity_cc[i] <- round(k*(8760-rlnorm(1, mu_cc, s_cc))/8760)
 
   
-  present <- NewInput.MMCK(lambda, mu, port_capacity_present[i],k=1000)
+  present <- NewInput.MMCK(lambda, mu, port_capacity_present[i],k=500)
   Q_present <- QueueingModel(present)
   time_at_port_present[i] <- Q_present$W
   
-  future <- NewInput.MMCK(lambda, mu, port_capacity_cc[i],k=1000)
+  future <- NewInput.MMCK(lambda, mu, port_capacity_cc[i],k=500)
   Q_future <- QueueingModel(future)
   time_at_port_climate_change[i]<- Q_future$W
 }
