@@ -53,7 +53,7 @@ arrival_times_tmp = []  # Draw interarrival times for each vessel type
 service_times_tmp = []  # Draw service times for each vessel type
 for i in range(p):
     arrival_times_p = rng.exponential(1/l[i], size=number_of_vessels[i])
-    print(arrival_times_p)
+    #print(arrival_times_p)
     service_times_p = rng.exponential(mu[i], size=number_of_vessels[i])
 #    arrival_timestamps_p = np.cumsum(arrival_times_p)  # Cumulative sum of interarrival times
     
@@ -61,10 +61,10 @@ for i in range(p):
     service_times_tmp.append(service_times_p)  # Draw service times for each vessel type
 #    arrival_timestamps_tmp.append(arrival_timestamps_p)  # Cumulative sum of interarrival times for each vessel type
 
-arrival_times = np.array(service_times_tmp, dtype = np.ndarray)
-service_times = np.array(arrival_times_tmp, dtype = np.ndarray)
+arrival_times = np.array(arrival_times_tmp, dtype = np.ndarray)
+service_times = np.array(service_times_tmp, dtype = np.ndarray)
 
-
+#print(np.mean(arrival_times[0]), np.mean(arrival_times[1]))
 
 #Finding the arrival timestamps
 arrival_timestamps = np.array(())  # Initialize an array for arrival timestamps
@@ -75,7 +75,7 @@ for i in range(p):
 
 
 vessels["arrival_timestamps"] = arrival_timestamps
-#vessels.to_csv('data.txt', sep='-', index=False)
+vessels.to_csv('data.txt', sep='-', index=False)
 
 
 print(vessels["vessel_ID"])
