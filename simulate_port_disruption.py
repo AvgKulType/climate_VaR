@@ -11,9 +11,9 @@ import pandas as pd
 
 #Simulation parameters
 mu = np.array([0.14,0.14])   #vessel service times (vessels per hour)
-l = np.array([1, 2.28]) #Vessel arrival rate (vessels per hour)
+l = np.array([0.5, 1.78]) #Vessel arrival rate (vessels per hour)
 
-k = 18 #180
+k = 180 #180
 p = 2
 
 assert len(mu) == len(l) and len(l)==p, "mu and l must have a length equal to p"
@@ -25,8 +25,8 @@ assert len(mu) == len(l) and len(l)==p, "mu and l must have a length equal to p"
 ##
 ##
 rng = np.random.default_rng()
-#number_of_vessels = rng.poisson(l*24*365, size=(p))  # Draw arrivals for each vessel type over k time steps
-number_of_vessels = rng.poisson(l*100, size=(p))  # Draw arrivals for each vessel type over k time steps
+number_of_vessels = rng.poisson(l*24*365, size=(p))  # Draw arrivals for each vessel type over k time steps
+#number_of_vessels = rng.poisson(l*100, size=(p))  # Draw arrivals for each vessel type over k time steps
 
 #Creating vessel type
 vessel_type = np.array((), dtype=int)  # Create an array for vessel type, 0 is normal, 1 is priority
@@ -114,6 +114,8 @@ leaving_vessels = []  # List to keep track of vessels that are leaving the berth
 num_vessels_at_berth = 0  # Counter for the number of vessels at berth
 
 for i in range(vessels.shape[0]):
+    if i % 1000 == 0:  # Print progress every 1000 vessels
+        print(f"Processing vessel {i} of {vessels.shape[0]}")
     #print(vessels.shape[0]-i)
     #Determine the current time stamp
     current_vessel = vessels.iloc[i]  # Get the current vessel
@@ -133,7 +135,7 @@ for i in range(vessels.shape[0]):
     
     #If there are no available berths, add the vessel to the the appropriate queue
     elif len(vessels_at_berth) >= k:
-        print("No available berth, adding vessel to queue")
+        #print("No available berth, adding vessel to queue")
         current_vessel_priority = vessels.loc[i,"vessel_type"]  # Get the priority of the vessel
         current_vessel_ID = vessels.loc[i,"vessel_ID"] # Get the ID of the vessel
         #print(current_vessel_ID)
@@ -145,10 +147,10 @@ for i in range(vessels.shape[0]):
 
     #Check if any vessels will leave during the next period
     leaving_vessels = []
-    print(len(vessels_at_berth))
-    print(len(vessels_in_queue[0]))
-    print(len(vessels_in_queue[1]))
-    print(" ")
+    #print(len(vessels_at_berth))
+    #print(len(vessels_in_queue[0]))
+    #print(len(vessels_in_queue[1]))
+    #print(" ")
     for j in range(len(vessels_at_berth)):
         #print("lmaos")
         vessel_at_berth_tmp = vessels.iloc[vessels_at_berth[j]] # The vessel at berth that is to be checked
@@ -159,7 +161,7 @@ for i in range(vessels.shape[0]):
             #num_vessels_at_berth -= 1
             #taking the highest priority vessel from the queue
             for q in range(p):
-                #check if there are any vessels in the queue of priority k
+                #check if there are any vessels in the queue of priority q
                 if len(vessels_in_queue[q]) > 0 and len(vessels_at_berth) < k:
                     next_vessel_in_ID = vessels_in_queue[q][0] #get vessel ID of the next vessel in the queue
                     service_time = vessels.loc[next_vessel_in_ID,"time in service"]
@@ -176,9 +178,40 @@ for i in range(vessels.shape[0]):
         vessels_at_berth.remove(leaving_vessels[a])
 
 
-#Resolve the queue when all the vessels have arrived 
+#Resolve the queue when all the vessels have arrived
+waiting_vessels = 0
+for i in range(p):
+    waiting_vessels += len(vessels_in_queue[i])  # Count the number of vessels in the queue
 
+for i in range(waiting_vessels):
+    #print(i)
+    #Find the vessel at port with the earliest exit time
+    current_vessels_at_berth = vessels.iloc[vessels_at_berth]  # Get the vessels at berth
+    current_remaining_time_at_berth = current_vessels_at_berth["Exit berth timestamp"]  # Calculate the remaining time at berth for each vessel
+    next_leaving_vessel_ID = current_remaining_time_at_berth.idxmin()  # Get the index of the vessel with the earliest exit time
+    current_time = vessels.loc[next_leaving_vessel_ID,"Exit berth timestamp"]  # Get the current time stamp
+    vessels_at_berth.pop(vessels_at_berth.index(next_leaving_vessel_ID))  # Remove the vessel from the berth list
+
+    
+    #finding the next vessel in the queue
+    for q in range(p):
+        #check if there are any vessels in the queue of priority q
+        if len(vessels_in_queue[q]) > 0 and len(vessels_at_berth) < k:
+            #print("lmao")
+            next_vessel_in_ID = vessels_in_queue[q][0] #get vessel ID of the next vessel in the queue
+            service_time = vessels.loc[next_vessel_in_ID,"time in service"]
+            vessels_at_berth.append(next_vessel_in_ID)
+
+            #calculating the exit time for the vessel entering the berth
+            vessels.loc[next_vessel_in_ID,"Enter berth timestamp"] = current_time   # Record the timestamp for the vessel entering the bert
+            vessels.loc[next_vessel_in_ID,"Exit berth timestamp"] = current_time + service_time  # Record the timestamp for when the vessel exits the berth
+            vessels_in_queue[q].pop(0)  # Remove the vessel from the queue
 
 
 #output the databaser to test
+vessels["Time in system"] = vessels["Exit berth timestamp"] - vessels["arrival_timestamps"]  # Calculate the time in system
+print(vessels["Time in system"].describe())  # Print the statistics of the time in system
+plt.hist(vessels["Time in system"], bins = 100)
+plt.show()
+
 vessels.to_csv('data.csv', sep = ";",index=False)
